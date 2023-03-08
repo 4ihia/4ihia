@@ -21,14 +21,7 @@
 		// Creamos el mapa centrado en Cantabria
 		var map = L.map('map').setView([43.1828, -3.9878], 8);
 
-		// Añadimos la capa base de OpenStreetMap
-		var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-		});
-
-		// Añadimos la capa base al mapa
-		osmLayer.addTo(map);
-
+		
 		// Añadimos la capa de incendios forestales
 		var firesLayer = L.tileLayer('https://tiles.wildfiretoday.com/Map/Tiles/{z}/{x}/{y}.png', {
 			attribution: 'Fires data &copy; <a href="https://wildfiretoday.com">Wildfire Today</a>'
@@ -44,6 +37,15 @@
 		// Añadimos las capas al mapa
 		firesLayer.addTo(map);
 		weatherLayer.addTo(map);
+		
+		// Añadimos la capa base de OpenStreetMap
+		var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+		});
+
+		// Añadimos la capa base al mapa
+		osmLayer.addTo(map);
+
 
 		// Añadimos un control de capas para alternar entre capas base y capas adicionales
 		L.control.layers({
