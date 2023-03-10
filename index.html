@@ -1,133 +1,172 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Mapa con capa de AEMET de niveles de riesgo estimado de incendios forestales</title>
+  <title>Visor cartográfico de AEMET</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css" integrity="sha384-vKoMIs5hE65Jn0m/eAgpCmJll/Hd+8z0KktA+B2ruGwuA+xdvD54jIcdVJvhbT6+" crossorigin=""/>
-  <style>
-    body { margin: 0; padding: 0; }
-    #mapid { height: 100vh; }
-    .legend {
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 5px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-      padding: 10px;
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      z-index: 1000;
-    }
-    .legend h4 { margin-top: 0; }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 5px;
-    }
-    .legend-color {
-      height: 20px;
-      width: 20px;
-      margin-right: 5px;
-      border-radius: 50%;
-    }
-  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" integrity="sha512-ZfMjzrvqlG0RkC0cTj34OnEhY6U3TlySBaeho/6vM9YSrAWL1ekLrOhjFy/mvDn1N0zbzg/gSTQnEMdHjsjXQ==" crossorigin=""/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js" integrity="sha512-YM74aV7TPjy0bsuV7b2cvmMcgV7R0UBW8EckfX9SjcyAz5ix5IwWgxJvplCCl4lB4I4lFfJZ8hTV1XjSg5o5NQ==" crossorigin=""></script>
 </head>
 <body>
-  <div id="mapid"></div>
-  <div class="legend">
-    <h4>Niveles de riesgo estimado</h4>
-    <div class="legend-item">
-      <div class="legend-color" style="background-color: #a8ddb5;"></div>
-      <span>Bajo</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color" style="background-color: #fee08b;"></div>
-      <span>Mod. bajo</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color" style="background-color: #fc8d59;"></div>
-      <span>Mod. alto</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color" style="background-color: #d73027;"></div>
-      <span>Alto</span>
-    </div>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js" integrity="sha384-XzO7OjK32D1+7SZTp1B9z9BjQcZqcc3NOhQ2HRtTvbBBYr1jyGk7i11z0tX9jZ0s" crossorigin=""></script>
+  <div id="map" style="height: 100vh;"></div>
   <script>
-    const map = L.map('mapid').setView([43.362, -5.849], 7);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy;OpenStreetMap, &copy;AEMET',
-	maxZoom: 18,
-	}).addTo(map);
-const legend = L.control({ position: 'topright' });
-legend.onAdd = function (map) {
-  const div = L.DomUtil.create('div', 'legend');
-  div.innerHTML = `
-    <h4>Niveles de riesgo estimado</h4>
-    <div class="legend-item">
-      <div class="legend-color" style="background-color: #a8ddb5;"></div>
-      <span>Bajo</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color" style="background-color: #fee08b;"></div>
-      <span>Mod. bajo</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color" style="background-color: #fc8d59;"></div>
-      <span>Mod. alto</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color" style="background-color: #d73027;"></div>
-      <span>Alto</span>
-    </div>
-  `;
-  return div;
-};
-legend.addTo(map);
+    // Crea el mapa
+    var map = L.map('map').setView([42.5, -6], 7);
 
-const aemetLayer = L.tileLayer('https://opendata.aemet.es/opendata/sh/d186c0a8', {
-  attribution: 'Datos de AEMET',
-  maxZoom: 18,
-});
-aemetLayer.on('tileload', function(e) {
-  const canvas = e.tile.getElementsByTagName('canvas')[0];
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const red = imageData.data[i];
-      const green = imageData.data[i + 1];
-      const blue = imageData.data[i + 2];
-      if (red === 168 && green === 221 && blue === 181) {
-        // bajo
-        imageData.data[i] = 168;
-        imageData.data[i + 1] = 221;
-        imageData.data[i + 2] = 181;
-      } else if (red === 254 && green === 224 && blue === 139) {
-        // mod. bajo
-        imageData.data[i] = 254;
-        imageData.data[i + 1] = 224;
-        imageData.data[i + 2] = 139;
-      } else if (red === 252 && green === 141 && blue === 89) {
-        // mod. alto
-        imageData.data[i] = 252;
-        imageData.data[i + 1] = 141;
-        imageData.data[i + 2] = 89;
-      } else if (red === 215 && green === 48 && blue === 39) {
-        // alto
-        imageData.data[i] = 215;
-        imageData.data[i + 1] = 48;
-        imageData.data[i + 2] = 39;
-      }
-    }
-    ctx.putImageData(imageData, 0, 0);
-  }
-});
-aemetLayer.addTo(map);
- </script>
+    // Agrega la capa base oscura
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Agrega los datos de AEMET
+    var url = 'https://opendata.aemet.es/opendata/api/mapasygraficos/analisisdiario/riesgo_incendio';
+    var apiKey = 'introduce-tu-clave-api-aqui';
+    var requestOptions = {
+      method: 'GET',
+      redirect: 'follow'
+    };
+    fetch(url + '?api_key=' + apiKey, requestOptions)
+      .then(response => response.json())
+      .then(result => {
+        var dataUrl = result.datos;
+        fetch(dataUrl)
+          .then(response => response.json())
+          .then(data => {
+            L.geoJSON(data, {
+              style: function(feature) {
+                var color = '#edf8fb';
+                if (feature.properties.riesgo_incendio > 2) {
+                  color = '#fecc5c';
+                }
+                if (feature.properties.riesgo_incendio > 3) {
+                  color = '#fd8d3c';
+                }
+                if (feature.properties.riesgo_incendio > 4) {
+                  color = '#e31a1c';
+                }
+                if (feature.properties.riesgo_incendio > 5) {
+                  color = '#800026';
+                }
+                return {
+                  color: '#000',
+			<!DOCTYPE html>
+<html>
+<head>
+  <title>Visor cartográfico de AEMET</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" integrity="sha512-ZfMjzrvqlG0RkC0cTj34OnEhY6U3TlySBaeho/6vM9YSrAWL1ekLrOhjFy/mvDn1N0zbzg/gSTQnEMdHjsjXQ==" crossorigin=""/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js" integrity="sha512-YM74aV7TPjy0bsuV7b2cvmMcgV7R0UBW8EckfX9SjcyAz5ix5IwWgxJvplCCl4lB4I4lFfJZ8hTV1XjSg5o5NQ==" crossorigin=""></script>
+</head>
+<body>
+  <div id="map" style="height: 100vh;"></div>
+  <script>
+    // Crea el mapa
+    var map = L.map('map').setView([42.5, -6], 7);
+
+    // Agrega la capa base oscura
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Agrega los datos de AEMET
+    var url = 'https://opendata.aemet.es/opendata/api/mapasygraficos/analisisdiario/riesgo_incendio';
+    var apiKey = 'introduce-tu-clave-api-aqui';
+    var requestOptions = {
+      method: 'GET',
+      redirect: 'follow'
+    };
+    fetch(url + '?api_key=' + apiKey, requestOptions)
+      .then(response => response.json())
+      .then(result => {
+        var dataUrl = result.datos;
+        fetch(dataUrl)
+          .then(response => response.json())
+          .then(data => {
+            L.geoJSON(data, {
+              style: function(feature) {
+                var color = '#edf8fb';
+                if (feature.properties.riesgo_incendio > 2) {
+                  color = '#fecc5c';
+                }
+                if (feature.properties.riesgo_incendio > 3) {
+                  color = '#fd8d3c';
+                }
+                if (feature.properties.riesgo_incendio > 4) {
+                  color = '#e31a1c';
+                }
+                if (feature.properties.riesgo_incendio > 5) {
+                  color = '#800026';
+                }
+                return {
+                  color: '#000',
+                 
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Visor cartográfico de AEMET</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" integrity="sha512-ZfMjzrvqlG0RkC0cTj34OnEhY6U3TlySBaeho/6vM9YSrAWL1ekLrOhjFy/mvDn1N0zbzg/gSTQnEMdHjsjXQ==" crossorigin=""/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js" integrity="sha512-YM74aV7TPjy0bsuV7b2cvmMcgV7R0UBW8EckfX9SjcyAz5ix5IwWgxJvplCCl4lB4I4lFfJZ8hTV1XjSg5o5NQ==" crossorigin=""></script>
+</head>
+<body>
+  <div id="map" style="height: 100vh;"></div>
+  <script>
+    // Crea el mapa
+    var map = L.map('map').setView([42.5, -6], 7);
+
+    // Agrega la capa base oscura
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Agrega los datos de AEMET
+    var url = 'https://opendata.aemet.es/opendata/api/mapasygraficos/analisisdiario/riesgo_incendio';
+    var apiKey = 'introduce-tu-clave-api-aqui';
+    var requestOptions = {
+      method: 'GET',
+      redirect: 'follow'
+    };
+    fetch(url + '?api_key=' + apiKey, requestOptions)
+      .then(response => response.json())
+      .then(result => {
+        var dataUrl = result.datos;
+        fetch(dataUrl)
+          .then(response => response.json())
+          .then(data => {
+            L.geoJSON(data, {
+              style: function(feature) {
+                var color = '#edf8fb';
+                if (feature.properties.riesgo_incendio > 2) {
+                  color = '#fecc5c';
+                }
+                if (feature.properties.riesgo_incendio > 3) {
+                  color = '#fd8d3c';
+                }
+                if (feature.properties.riesgo_incendio > 4) {
+                  color = '#e31a1c';
+                }
+                if (feature.properties.riesgo_incendio > 5) {
+                  color = '#800026';
+                }
+                return {
+                  color: '#000',
+                 
+              weight: 1,
+              fillColor: color,
+              fillOpacity: 0.7
+            };
+          }
+        }).addTo(map);
+      })
+      .catch(error => console.log('Error al cargar los datos: ' + error));
+  })
+  .catch(error => console.log('Error al obtener la URL de los datos: ' + error));
+</script>
 </body>
 </html>
-
-	    
-	   
+                 
