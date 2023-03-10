@@ -1,79 +1,133 @@
 <!DOCTYPE html>
 <html>
-	
 <head>
-	<title>Visor cartográfico con Leaflet y OpenWeatherMap</title>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
-	<style>
-		html, body, #map {
-			height: 100%;
-			margin: 0;
-			padding: 0;
-		}
-	</style>
-	<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyDhX5cSekwhkNtJeVKZ1xQfLr_5qDYarMI",
-    authDomain: "fuegos-125e1.firebaseapp.com",
-    projectId: "fuegos-125e1",
-    storageBucket: "fuegos-125e1.appspot.com",
-    messagingSenderId: "1028753882378",
-    appId: "1:1028753882378:web:6248c29af9fbc872100ef3"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
+  <title>Mapa con capa de AEMET de niveles de riesgo estimado de incendios forestales</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css" integrity="sha384-vKoMIs5hE65Jn0m/eAgpCmJll/Hd+8z0KktA+B2ruGwuA+xdvD54jIcdVJvhbT6+" crossorigin=""/>
+  <style>
+    body { margin: 0; padding: 0; }
+    #mapid { height: 100vh; }
+    .legend {
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 5px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      padding: 10px;
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      z-index: 1000;
+    }
+    .legend h4 { margin-top: 0; }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .legend-color {
+      height: 20px;
+      width: 20px;
+      margin-right: 5px;
+      border-radius: 50%;
+    }
+  </style>
 </head>
 <body>
-	<div id="map"></div>
+  <div id="mapid"></div>
+  <div class="legend">
+    <h4>Niveles de riesgo estimado</h4>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #a8ddb5;"></div>
+      <span>Bajo</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #fee08b;"></div>
+      <span>Mod. bajo</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #fc8d59;"></div>
+      <span>Mod. alto</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #d73027;"></div>
+      <span>Alto</span>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js" integrity="sha384-XzO7OjK32D1+7SZTp1B9z9BjQcZqcc3NOhQ2HRtTvbBBYr1jyGk7i11z0tX9jZ0s" crossorigin=""></script>
+  <script>
+    const map = L.map('mapid').setView([43.362, -5.849], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy;OpenStreetMap, &copy;AEMET',
+	maxZoom: 18,
+	}).addTo(map);
+const legend = L.control({ position: 'topright' });
+legend.onAdd = function (map) {
+  const div = L.DomUtil.create('div', 'legend');
+  div.innerHTML = `
+    <h4>Niveles de riesgo estimado</h4>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #a8ddb5;"></div>
+      <span>Bajo</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #fee08b;"></div>
+      <span>Mod. bajo</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #fc8d59;"></div>
+      <span>Mod. alto</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #d73027;"></div>
+      <span>Alto</span>
+    </div>
+  `;
+  return div;
+};
+legend.addTo(map);
 
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
-	<script>
-		// Creamos el mapa centrado en Cantabria
-		var map = L.map('map').setView([43.1828, -3.9878], 8);
-
-		
-		// Añadimos la capa de incendios forestales
-		var firesLayer = L.tileLayer('https://tiles.wildfiretoday.com/Map/Tiles/{z}/{x}/{y}.png', {
-			attribution: 'Fires data &copy; <a href="https://wildfiretoday.com">Wildfire Today</a>'
-		});
-
-		// Añadimos la capa de temperatura y viento
-		var weatherLayer = L.tileLayer('https://{s}.tile.openweathermap.org/map/{layer}/{z}/{x}/{y}.png?appid={2cd76482b5661c0b3be9a86ab62d2f65}', {
-			attribution: 'Weather data &copy; <a href="https://openweathermap.org">OpenWeatherMap</a>',
-			layer: 'temp_new',
-			apiKey: '2cd76482b5661c0b3be9a86ab62d2f65'
-		});
-
-		// Añadimos las capas al mapa
-		firesLayer.addTo(map);
-		weatherLayer.addTo(map);
-		
-		// Añadimos la capa base de OpenStreetMap
-		var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-		});
-
-		// Añadimos la capa base al mapa
-		osmLayer.addTo(map);
-
-
-		// Añadimos un control de capas para alternar entre capas base y capas adicionales
-		L.control.layers({
-			'OpenStreetMap': osmLayer
-		// }, {
-			'Incendios forestales': firesLayer,
-			'Temperatura y viento': weatherLayer
-		}).addTo(map);
-	</script>
+const aemetLayer = L.tileLayer('https://opendata.aemet.es/opendata/sh/d186c0a8', {
+  attribution: 'Datos de AEMET',
+  maxZoom: 18,
+});
+aemetLayer.on('tileload', function(e) {
+  const canvas = e.tile.getElementsByTagName('canvas')[0];
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const red = imageData.data[i];
+      const green = imageData.data[i + 1];
+      const blue = imageData.data[i + 2];
+      if (red === 168 && green === 221 && blue === 181) {
+        // bajo
+        imageData.data[i] = 168;
+        imageData.data[i + 1] = 221;
+        imageData.data[i + 2] = 181;
+      } else if (red === 254 && green === 224 && blue === 139) {
+        // mod. bajo
+        imageData.data[i] = 254;
+        imageData.data[i + 1] = 224;
+        imageData.data[i + 2] = 139;
+      } else if (red === 252 && green === 141 && blue === 89) {
+        // mod. alto
+        imageData.data[i] = 252;
+        imageData.data[i + 1] = 141;
+        imageData.data[i + 2] = 89;
+      } else if (red === 215 && green === 48 && blue === 39) {
+        // alto
+        imageData.data[i] = 215;
+        imageData.data[i + 1] = 48;
+        imageData.data[i + 2] = 39;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
+});
+aemetLayer.addTo(map);
+ </script>
 </body>
 </html>
+
+	    
+	   
